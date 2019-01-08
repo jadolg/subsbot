@@ -9,4 +9,4 @@ before_install:
 - pip install codecov pytest-cov pytest-flakes pytest-pep8
 
 script:
-- pytest tests . -x --cov=./ --pep8 --flakes
+- pytest . -x --cov=./ --pep8 --flakes
