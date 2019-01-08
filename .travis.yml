@@ -1,0 +1,12 @@
+language: python
+
+python:
+- '3.6'
+- '2.7'
+
+
+before_install:
+- pip install codecov pytest-cov pytest-flakes pytest-pep8
+
+script:
+- pytest tests . -x --cov=./ --pep8 --flakes
