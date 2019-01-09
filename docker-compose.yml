@@ -5,3 +5,4 @@ services:
     image: subsbot
     environment:
       - TELEGRAM_TOKEN=token
+    restart: always
