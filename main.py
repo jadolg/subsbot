@@ -93,7 +93,7 @@ def episode(bot, update):
                                                  headers={'authority': 'www.tusubtitulo.com',
                                                           'upgrade-insecure-requests': '1',
                                                           'referer': 'https://www.tusubtitulo.com/'})
-                filename = get_filename_from_cd(subtitle_download.headers.get('content-disposition'))
+                filename = f"./subs/{get_filename_from_cd(subtitle_download.headers.get('content-disposition'))}"
                 downloaded_sub = open(filename, 'wb')
                 downloaded_sub.write(subtitle_download.content)
                 downloaded_sub.close()
@@ -117,7 +117,7 @@ def cancel(bot, update):
 
 updater = Updater(os.environ.get('TELEGRAM_TOKEN'))
 dp = updater.dispatcher
-
+os.makedirs('subs')
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler('start', start)],
 
