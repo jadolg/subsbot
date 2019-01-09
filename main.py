@@ -117,7 +117,12 @@ def cancel(bot, update):
 
 updater = Updater(os.environ.get('TELEGRAM_TOKEN'))
 dp = updater.dispatcher
-os.makedirs('subs')
+
+try:
+    os.makedirs('subs')
+except:
+    pass
+
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler('start', start)],
 
