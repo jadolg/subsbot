@@ -103,7 +103,7 @@ def episode(bot, update):
                 except:
                     pass
 
-            update.message.reply_text('desea buscar otro?', reply_markup=telegram.ReplyKeyboardMarkup([['/start']]))
+            update.message.reply_text('Eso fue todo.\n\nDesea buscar otro?', reply_markup=telegram.ReplyKeyboardMarkup([['/start']]))
             return ConversationHandler.END
 
     update.message.reply_text('no tengo ese episodio :(', reply_markup=ReplyKeyboardRemove())
