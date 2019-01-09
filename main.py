@@ -89,16 +89,19 @@ def episode(bot, update):
     for episode in data[update.effective_user.username]['episodes']:
         if episode.name == update.message.text:
             for subtitle in episode.subtitles:
-                subtitle_download = requests.get(subtitle[1],
-                                                 headers={'authority': 'www.tusubtitulo.com',
-                                                          'upgrade-insecure-requests': '1',
-                                                          'referer': 'https://www.tusubtitulo.com/'})
-                filename = f"./subs/{get_filename_from_cd(subtitle_download.headers.get('content-disposition'))}"
-                downloaded_sub = open(filename, 'wb')
-                downloaded_sub.write(subtitle_download.content)
-                downloaded_sub.close()
-                bot.send_document(chat_id=update.effective_chat.id, document=open(downloaded_sub.name, 'rb'))
-                bot.send_message(chat_id=update.effective_chat.id, text=subtitle[0])
+                try:
+                    subtitle_download = requests.get(subtitle[1],
+                                                     headers={'authority': 'www.tusubtitulo.com',
+                                                              'upgrade-insecure-requests': '1',
+                                                              'referer': 'https://www.tusubtitulo.com/'})
+                    filename = f"./subs/{get_filename_from_cd(subtitle_download.headers.get('content-disposition'))}"
+                    downloaded_sub = open(filename, 'wb')
+                    downloaded_sub.write(subtitle_download.content)
+                    downloaded_sub.close()
+                    bot.send_document(chat_id=update.effective_chat.id, document=open(downloaded_sub.name, 'rb'))
+                    bot.send_message(chat_id=update.effective_chat.id, text=subtitle[0])
+                except:
+                    pass
 
             update.message.reply_text('desea buscar otro?', reply_markup=telegram.ReplyKeyboardMarkup([['/start']]))
             return ConversationHandler.END
