@@ -118,7 +118,8 @@ def cancel(bot, update):
     return ConversationHandler.END
 
 
-updater = Updater(os.environ.get('TELEGRAM_TOKEN'))
+TOKEN = os.environ.get('TELEGRAM_TOKEN')
+updater = Updater(TOKEN)
 dp = updater.dispatcher
 
 try:
@@ -140,6 +141,8 @@ conv_handler = ConversationHandler(
 )
 
 dp.add_handler(conv_handler)
-
-updater.start_polling()
+updater.start_webhook(listen="0.0.0.0",
+                      port=8443,
+                      url_path=TOKEN)
+updater.bot.setWebhook(f"https://tusubtitulobot.herokuapp.com/{TOKEN}")
 updater.idle()
