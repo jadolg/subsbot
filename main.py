@@ -98,10 +98,10 @@ def get_filename_from_cd(cd):
     """
     if not cd:
         return None
-    fname = re.findall('filename=(.+)', cd)
-    if len(fname) == 0:
+    file_name = re.findall('filename=(.+)', cd)
+    if len(file_name) == 0:
         return None
-    return fname[0][1:-1].encode('ascii', 'ignore').decode('unicode_escape')
+    return file_name[0][1:-1].encode('ascii', 'ignore').decode('unicode_escape')
 
 
 @send_action(ChatAction.UPLOAD_DOCUMENT)
