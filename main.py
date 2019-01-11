@@ -139,7 +139,8 @@ conv_handler = ConversationHandler(
         EPISODE: [MessageHandler(Filters.text, episode, pass_user_data=True)],
     },
 
-    fallbacks=[CommandHandler('cancelar', cancel, pass_user_data=True)]
+    fallbacks=[MessageHandler(Filters.text, cancel, pass_user_data=True),
+               CommandHandler('cancelar', cancel, pass_user_data=True)]
 )
 
 dp.add_handler(conv_handler)
