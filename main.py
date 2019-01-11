@@ -1,9 +1,13 @@
 import logging
 import os
+import pickle
 import re
+import sys
+
 import requests
 import telegram
 from telegram import ReplyKeyboardRemove
+from telegram.utils.promise import Promise
 
 from crawler import Serie
 from fuzzywuzzy import process
@@ -18,6 +22,43 @@ NAME, NAME_SELECT, SEASON, EPISODE, DOWNLOAD = range(5)
 
 from functools import wraps
 from telegram import ChatAction
+
+
+def save_data():
+    # Before pickling
+    resolved = dict()
+    for k, v in conv_handler.conversations.items():
+        if isinstance(v, tuple) and len(v) is 2 and isinstance(v[1], Promise):
+            try:
+                new_state = v[1].result()  # Result of async function
+            except:
+                new_state = v[0]  # In case async function raised an error, fallback to old state
+            resolved[k] = new_state
+        else:
+            resolved[k] = v
+    try:
+        f = open('backup/conversations', 'wb+')
+        pickle.dump(resolved, f)
+        f.close()
+        f = open('backup/userdata', 'wb+')
+        pickle.dump(dp.user_data, f)
+        f.close()
+    except:
+        logging.error(sys.exc_info()[0])
+
+
+def load_data():
+    try:
+        f = open('backup/conversations', 'rb')
+        conv_handler.conversations = pickle.load(f)
+        f.close()
+        f = open('backup/userdata', 'rb')
+        dp.user_data = pickle.load(f)
+        f.close()
+    except FileNotFoundError:
+        logging.error("Data file not found")
+    except:
+        logging.error(sys.exc_info()[0])
 
 
 def send_action(action):
@@ -36,6 +77,7 @@ def send_action(action):
 
 
 def start(bot, update):
+    save_data()
     update.message.reply_text(
         'Hola! Yo buscaré subtítulos para ti.\n\n'
         'Envía /cancelar para terminar nuestra charla.\n\n'
@@ -46,6 +88,7 @@ def start(bot, update):
 
 @send_action(ChatAction.TYPING)
 def name(bot, update, user_data):
+    save_data()
     names = []
     for serie in process.extractBests(update.message.text, Serie.get_series_list(), limit=3):
         names.append([serie[0].name])
@@ -58,6 +101,7 @@ def name(bot, update, user_data):
 
 @send_action(ChatAction.TYPING)
 def name_select(bot, update, user_data):
+    save_data()
     seasons = []
     for serie in Serie.get_series_list():
         if serie.name == update.message.text:
@@ -77,6 +121,7 @@ def name_select(bot, update, user_data):
 
 @send_action(ChatAction.TYPING)
 def season(bot, update, user_data):
+    save_data()
     if update.message.text in user_data['serie'].get_seasons():
         user_data['season'] = update.message.text
         episodes = user_data['serie'].get_episodes(update.message.text)
@@ -106,6 +151,7 @@ def get_filename_from_cd(cd):
 
 @send_action(ChatAction.UPLOAD_DOCUMENT)
 def episode(bot, update, user_data):
+    save_data()
     for episode in user_data['episodes']:
         if episode.name == update.message.text:
             for subtitle in episode.subtitles:
@@ -126,10 +172,12 @@ def episode(bot, update, user_data):
             update.message.reply_text('Eso fue todo.\n\nDesea buscar otro?',
                                       reply_markup=telegram.ReplyKeyboardMarkup([['/start']]))
             user_data.clear()
+            save_data()
             return ConversationHandler.END
 
     update.message.reply_text('no tengo ese episodio :(', reply_markup=ReplyKeyboardRemove())
     user_data.clear()
+    save_data()
     return ConversationHandler.END
 
 
@@ -138,6 +186,7 @@ def cancel(bot, update, user_data):
     logger.info("User %s canceled the conversation.", user.first_name)
     update.message.reply_text('Nos vemos!', reply_markup=telegram.ReplyKeyboardMarkup([['/start']]))
     user_data.clear()
+    save_data()
     return ConversationHandler.END
 
 
@@ -165,6 +214,7 @@ conv_handler = ConversationHandler(
 )
 
 dp.add_handler(conv_handler)
+load_data()
 updater.start_webhook(listen="0.0.0.0",
                       port=int(os.environ.get('PORT')),
                       url_path=TOKEN)
