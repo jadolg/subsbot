@@ -7,15 +7,32 @@ from telegram import ReplyKeyboardRemove
 
 from crawler import Serie
 from fuzzywuzzy import process
+from telegram.ext import Updater, CommandHandler, ConversationHandler, MessageHandler, Filters
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-from telegram.ext import Updater, CommandHandler, ConversationHandler, MessageHandler, Filters
-
 NAME, NAME_SELECT, SEASON, EPISODE, DOWNLOAD = range(5)
+
+from functools import wraps
+from telegram import ChatAction
+
+
+def send_action(action):
+    """Sends `action` while processing func command."""
+
+    def decorator(func):
+        @wraps(func)
+        def command_func(*args, **kwargs):
+            bot, update = args
+            bot.send_chat_action(chat_id=update.effective_message.chat_id, action=action)
+            return func(bot, update, **kwargs)
+
+        return command_func
+
+    return decorator
 
 
 def start(bot, update):
@@ -27,6 +44,7 @@ def start(bot, update):
     return NAME
 
 
+@send_action(ChatAction.TYPING)
 def name(bot, update, user_data):
     names = []
     for serie in process.extractBests(update.message.text, Serie.get_series_list(), limit=3):
@@ -38,6 +56,7 @@ def name(bot, update, user_data):
     return NAME_SELECT
 
 
+@send_action(ChatAction.TYPING)
 def name_select(bot, update, user_data):
     seasons = []
     for serie in Serie.get_series_list():
@@ -56,6 +75,7 @@ def name_select(bot, update, user_data):
     return SEASON
 
 
+@send_action(ChatAction.TYPING)
 def season(bot, update, user_data):
     if update.message.text in user_data['serie'].get_seasons():
         user_data['season'] = update.message.text
@@ -84,6 +104,7 @@ def get_filename_from_cd(cd):
     return fname[0][1:-1].encode('ascii', 'ignore').decode('unicode_escape')
 
 
+@send_action(ChatAction.UPLOAD_DOCUMENT)
 def episode(bot, update, user_data):
     for episode in user_data['episodes']:
         if episode.name == update.message.text:
