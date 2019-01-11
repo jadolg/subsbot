@@ -142,13 +142,6 @@ conv_handler = ConversationHandler(
     fallbacks=[CommandHandler('cancelar', cancel, pass_user_data=True)]
 )
 
-
-def echo(bot, update):
-    """Echo the user message."""
-    update.message.reply_text(update.message.text)
-
-
-dp.add_handler(MessageHandler(Filters.text, echo))
 dp.add_handler(conv_handler)
 updater.start_webhook(listen="0.0.0.0",
                       port=int(os.environ.get('PORT')),
