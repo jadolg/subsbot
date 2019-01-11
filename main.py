@@ -43,7 +43,7 @@ def name_select(bot, update, user_data):
     for serie in Serie.get_series_list():
         if serie.name == update.message.text:
             seasons = serie.get_seasons()
-            user_data[update.effective_user.username]['serie'] = serie
+            user_data['serie'] = serie
             break
 
     if seasons is []:
@@ -57,11 +57,11 @@ def name_select(bot, update, user_data):
 
 
 def season(bot, update, user_data):
-    if update.message.text in user_data[update.effective_user.username]['serie'].get_seasons():
-        user_data[update.effective_user.username]['season'] = update.message.text
-        episodes = user_data[update.effective_user.username]['serie'].get_episodes(update.message.text)
+    if update.message.text in user_data['serie'].get_seasons():
+        user_data['season'] = update.message.text
+        episodes = user_data['serie'].get_episodes(update.message.text)
         episode_names = [[episode.name] for episode in episodes]
-        user_data[update.effective_user.username]['episodes'] = episodes
+        user_data['episodes'] = episodes
         episode_names.append(['/cancelar'])
         reply_markup = telegram.ReplyKeyboardMarkup(episode_names)
         update.message.reply_text('Qué episodio?', reply_markup=reply_markup)
@@ -85,7 +85,7 @@ def get_filename_from_cd(cd):
 
 
 def episode(bot, update, user_data):
-    for episode in user_data[update.effective_user.username]['episodes']:
+    for episode in user_data['episodes']:
         if episode.name == update.message.text:
             for subtitle in episode.subtitles:
                 try:
