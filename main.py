@@ -35,12 +35,12 @@ def save_data():
                 new_state = v[0]  # In case async function raised an error, fallback to old state
             resolved[k] = new_state
         else:
-            resolved[k] = v
+            resolved[k] = v + 1
     try:
-        f = open('backup/conversations', 'wb+')
+        f = open('backup/conversations', 'wb')
         pickle.dump(resolved, f)
         f.close()
-        f = open('backup/userdata', 'wb+')
+        f = open('backup/userdata', 'wb')
         pickle.dump(dp.user_data, f)
         f.close()
     except:
@@ -77,7 +77,6 @@ def send_action(action):
 
 
 def start(bot, update):
-    save_data()
     update.message.reply_text(
         'Hola! Yo buscaré subtítulos para ti.\n\n'
         'Envía /cancelar para terminar nuestra charla.\n\n'
@@ -95,13 +94,12 @@ def name(bot, update, user_data):
     names.append(['/cancelar'])
     reply_markup = telegram.ReplyKeyboardMarkup(names)
     update.message.reply_text('Alguna de estas?', reply_markup=reply_markup)
-
+    save_data()
     return NAME_SELECT
 
 
 @send_action(ChatAction.TYPING)
 def name_select(bot, update, user_data):
-    save_data()
     seasons = []
     for serie in Serie.get_series_list():
         if serie.name == update.message.text:
@@ -112,10 +110,12 @@ def name_select(bot, update, user_data):
     if seasons is []:
         update.message.reply_text('No he encontrado nada :(', reply_markup=ReplyKeyboardRemove())
         user_data.clear()
+        save_data()
         return ConversationHandler.END
 
     reply_markup = telegram.ReplyKeyboardMarkup([seasons, ['/cancelar']])
     update.message.reply_text('Qué temporada?', reply_markup=reply_markup)
+    save_data()
     return SEASON
 
 
@@ -127,12 +127,14 @@ def season(bot, update, user_data):
         episodes = user_data['serie'].get_episodes(update.message.text)
         episode_names = [[episode.name] for episode in episodes]
         user_data['episodes'] = episodes
+        save_data()
         episode_names.append(['/cancelar'])
         reply_markup = telegram.ReplyKeyboardMarkup(episode_names)
         update.message.reply_text('Qué episodio?', reply_markup=reply_markup)
     else:
         update.message.reply_text('No tengo esta temporada :(', reply_markup=ReplyKeyboardRemove())
         user_data.clear()
+        save_data()
         return ConversationHandler.END
     return EPISODE
 
@@ -166,8 +168,9 @@ def episode(bot, update, user_data):
                     downloaded_sub.close()
                     bot.send_document(chat_id=update.effective_chat.id, document=open(downloaded_sub.name, 'rb'))
                     bot.send_message(chat_id=update.effective_chat.id, text=subtitle[0])
+                    save_data()
                 except:
-                    pass
+                    logging.error(sys.exc_info()[0])
 
             update.message.reply_text('Eso fue todo.\n\nDesea buscar otro?',
                                       reply_markup=telegram.ReplyKeyboardMarkup([['/start']]))
@@ -199,6 +202,11 @@ try:
 except:
     pass
 
+try:
+    os.makedirs('backup')
+except:
+    pass
+
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler('start', start)],
 
@@ -218,5 +226,10 @@ load_data()
 updater.start_webhook(listen="0.0.0.0",
                       port=int(os.environ.get('PORT')),
                       url_path=TOKEN)
-updater.bot.setWebhook(f"https://tusubtitulobot.herokuapp.com/{TOKEN}")
+
+if os.environ.get('LOCAL') == 'true':
+    updater.bot.setWebhook(f"https://26d9413f.ngrok.io/{TOKEN}")
+else:
+    updater.bot.setWebhook(f"https://tusubtitulobot.herokuapp.com/{TOKEN}")
+
 updater.idle()
