@@ -17,11 +17,8 @@ from telegram.ext import Updater, CommandHandler, ConversationHandler, MessageHa
 
 NAME, NAME_SELECT, SEASON, EPISODE, DOWNLOAD = range(5)
 
-data = {}
-
 
 def start(bot, update):
-    data[update.effective_user.username] = {}
     update.message.reply_text(
         'Hola! Yo buscaré subtítulos para ti.\n\n'
         'Envía /cancelar para terminar nuestra charla.\n\n'
@@ -30,7 +27,7 @@ def start(bot, update):
     return NAME
 
 
-def name(bot, update):
+def name(bot, update, user_data):
     names = []
     for serie in process.extractBests(update.message.text, Serie.get_series_list(), limit=3):
         names.append([serie[0].name])
@@ -41,12 +38,12 @@ def name(bot, update):
     return NAME_SELECT
 
 
-def name_select(bot, update):
+def name_select(bot, update, user_data):
     seasons = []
     for serie in Serie.get_series_list():
         if serie.name == update.message.text:
             seasons = serie.get_seasons()
-            data[update.effective_user.username]['serie'] = serie
+            user_data[update.effective_user.username]['serie'] = serie
             break
 
     if seasons is []:
@@ -58,12 +55,12 @@ def name_select(bot, update):
     return SEASON
 
 
-def season(bot, update):
-    if update.message.text in data[update.effective_user.username]['serie'].get_seasons():
-        data[update.effective_user.username]['season'] = update.message.text
-        episodes = data[update.effective_user.username]['serie'].get_episodes(update.message.text)
+def season(bot, update, user_data):
+    if update.message.text in user_data[update.effective_user.username]['serie'].get_seasons():
+        user_data[update.effective_user.username]['season'] = update.message.text
+        episodes = user_data[update.effective_user.username]['serie'].get_episodes(update.message.text)
         episode_names = [[episode.name] for episode in episodes]
-        data[update.effective_user.username]['episodes'] = episodes
+        user_data[update.effective_user.username]['episodes'] = episodes
         episode_names.append(['/cancelar'])
         reply_markup = telegram.ReplyKeyboardMarkup(episode_names)
         update.message.reply_text('Qué episodio?', reply_markup=reply_markup)
@@ -85,8 +82,8 @@ def get_filename_from_cd(cd):
     return fname[0][1:-1].encode('ascii', 'ignore').decode('unicode_escape')
 
 
-def episode(bot, update):
-    for episode in data[update.effective_user.username]['episodes']:
+def episode(bot, update, user_data):
+    for episode in user_data[update.effective_user.username]['episodes']:
         if episode.name == update.message.text:
             for subtitle in episode.subtitles:
                 try:
@@ -103,7 +100,8 @@ def episode(bot, update):
                 except:
                     pass
 
-            update.message.reply_text('Eso fue todo.\n\nDesea buscar otro?', reply_markup=telegram.ReplyKeyboardMarkup([['/start']]))
+            update.message.reply_text('Eso fue todo.\n\nDesea buscar otro?',
+                                      reply_markup=telegram.ReplyKeyboardMarkup([['/start']]))
             return ConversationHandler.END
 
     update.message.reply_text('no tengo ese episodio :(', reply_markup=ReplyKeyboardRemove())
@@ -131,10 +129,10 @@ conv_handler = ConversationHandler(
     entry_points=[CommandHandler('start', start)],
 
     states={
-        NAME: [MessageHandler(Filters.text, name)],
-        NAME_SELECT: [MessageHandler(Filters.text, name_select)],
-        SEASON: [MessageHandler(Filters.text, season)],
-        EPISODE: [MessageHandler(Filters.text, episode)],
+        NAME: [MessageHandler(Filters.text, name, pass_user_data=True)],
+        NAME_SELECT: [MessageHandler(Filters.text, name_select, pass_user_data=True)],
+        SEASON: [MessageHandler(Filters.text, season, pass_user_data=True)],
+        EPISODE: [MessageHandler(Filters.text, episode, pass_user_data=True)],
     },
 
     fallbacks=[CommandHandler('cancelar', cancel)]
