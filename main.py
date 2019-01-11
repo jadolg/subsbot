@@ -48,6 +48,7 @@ def name_select(bot, update, user_data):
 
     if seasons is []:
         update.message.reply_text('No he encontrado nada :(', reply_markup=ReplyKeyboardRemove())
+        user_data.clear()
         return ConversationHandler.END
 
     reply_markup = telegram.ReplyKeyboardMarkup([seasons, ['/cancelar']])
@@ -66,6 +67,7 @@ def season(bot, update, user_data):
         update.message.reply_text('Qué episodio?', reply_markup=reply_markup)
     else:
         update.message.reply_text('No tengo esta temporada :(', reply_markup=ReplyKeyboardRemove())
+        user_data.clear()
         return ConversationHandler.END
     return EPISODE
 
@@ -102,17 +104,19 @@ def episode(bot, update, user_data):
 
             update.message.reply_text('Eso fue todo.\n\nDesea buscar otro?',
                                       reply_markup=telegram.ReplyKeyboardMarkup([['/start']]))
+            user_data.clear()
             return ConversationHandler.END
 
     update.message.reply_text('no tengo ese episodio :(', reply_markup=ReplyKeyboardRemove())
+    user_data.clear()
     return ConversationHandler.END
 
 
-def cancel(bot, update):
+def cancel(bot, update, user_data):
     user = update.message.from_user
     logger.info("User %s canceled the conversation.", user.first_name)
     update.message.reply_text('Nos vemos!', reply_markup=telegram.ReplyKeyboardMarkup([['/start']]))
-
+    user_data.clear()
     return ConversationHandler.END
 
 
@@ -135,7 +139,7 @@ conv_handler = ConversationHandler(
         EPISODE: [MessageHandler(Filters.text, episode, pass_user_data=True)],
     },
 
-    fallbacks=[CommandHandler('cancelar', cancel)]
+    fallbacks=[CommandHandler('cancelar', cancel, pass_user_data=True)]
 )
 
 dp.add_handler(conv_handler)
