@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.DEBUG,
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-NAME, NAME_SELECT, SEASON, EPISODE, DOWNLOAD = range(5)
+NAME, NAME_SELECT, SEASON, EPISODE, RESTART = range(5)
 
 AWS_SERVER_PUBLIC_KEY = os.environ.get('AWS_SERVER_PUBLIC_KEY')
 AWS_SERVER_SECRET_KEY = os.environ.get('AWS_SERVER_SECRET_KEY')
@@ -106,6 +106,13 @@ def start(bot, update, user_data):
     return NAME
 
 
+def restart(bot, update, user_data):
+    update.message.reply_text(
+        'Envía /cancelar para terminar nuestra charla.\n\n'
+        'Qué serie estás buscando?', reply_markup=ReplyKeyboardRemove())
+    save_data()
+    return NAME
+
 @send_action(ChatAction.TYPING)
 def name(bot, update, user_data):
     save_data()
@@ -132,7 +139,7 @@ def name_select(bot, update, user_data):
         update.message.reply_text('No he encontrado nada :(', reply_markup=ReplyKeyboardRemove())
         user_data.clear()
         save_data()
-        return ConversationHandler.END
+        return RESTART
 
     reply_markup = telegram.ReplyKeyboardMarkup([seasons, ['/cancelar']])
     update.message.reply_text('Qué temporada?', reply_markup=reply_markup)
@@ -156,7 +163,7 @@ def season(bot, update, user_data):
         update.message.reply_text('No tengo esta temporada :(', reply_markup=ReplyKeyboardRemove())
         user_data.clear()
         save_data()
-        return ConversationHandler.END
+        return RESTART
     return EPISODE
 
 
@@ -197,12 +204,12 @@ def episode(bot, update, user_data):
                                       reply_markup=telegram.ReplyKeyboardMarkup([['/start']]))
             user_data.clear()
             save_data()
-            return ConversationHandler.END
+            return RESTART
 
     update.message.reply_text('no tengo ese episodio :(', reply_markup=ReplyKeyboardRemove())
     user_data.clear()
     save_data()
-    return ConversationHandler.END
+    return RESTART
 
 
 def cancel(bot, update, user_data):
@@ -236,6 +243,7 @@ conv_handler = ConversationHandler(
         NAME_SELECT: [MessageHandler(Filters.text, name_select, pass_user_data=True)],
         SEASON: [MessageHandler(Filters.text, season, pass_user_data=True)],
         EPISODE: [MessageHandler(Filters.text, episode, pass_user_data=True)],
+        RESTART: [MessageHandler(Filters.text, restart, pass_user_data=True)],
     },
 
     fallbacks=[MessageHandler(Filters.text, cancel, pass_user_data=True),
