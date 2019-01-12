@@ -3,6 +3,7 @@ import os
 import pickle
 import re
 import sys
+import boto3
 
 import requests
 import telegram
@@ -22,6 +23,19 @@ NAME, NAME_SELECT, SEASON, EPISODE, DOWNLOAD = range(5)
 
 from functools import wraps
 from telegram import ChatAction
+
+AWS_SERVER_PUBLIC_KEY = os.environ.get('AWS_SERVER_PUBLIC_KEY')
+AWS_SERVER_SECRET_KEY = os.environ.get('AWS_SERVER_SECRET_KEY')
+bucket_name = os.environ.get('S3_BUCKET_NAME')
+
+session = boto3.Session(
+    aws_access_key_id=AWS_SERVER_PUBLIC_KEY,
+    aws_secret_access_key=AWS_SERVER_SECRET_KEY,
+)
+
+s3 = session.client('s3',
+                    endpoint_url=os.environ.get('S3_URL'),
+                    )
 
 
 def save_data():
@@ -43,11 +57,19 @@ def save_data():
         f = open('backup/userdata', 'wb')
         pickle.dump(dp.user_data, f)
         f.close()
+        s3.upload_file('backup/conversations', bucket_name, 'conversations')
+        s3.upload_file('backup/userdata', bucket_name, 'userdata')
     except:
         logging.error(sys.exc_info()[0])
 
 
 def load_data():
+    try:
+        s3.download_file(bucket_name, 'conversations', 'backup/conversations')
+        s3.download_file(bucket_name, 'userdata', 'backup/userdata')
+    except:
+        logging.error(sys.exc_info()[0])
+
     try:
         f = open('backup/conversations', 'rb')
         conv_handler.conversations = pickle.load(f)
