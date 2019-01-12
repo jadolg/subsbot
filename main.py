@@ -3,16 +3,18 @@ import os
 import pickle
 import re
 import sys
-import boto3
+from functools import wraps
 
+import boto3
 import requests
 import telegram
+from fuzzywuzzy import process
+from telegram import ChatAction
 from telegram import ReplyKeyboardRemove
+from telegram.ext import Updater, CommandHandler, ConversationHandler, MessageHandler, Filters
 from telegram.utils.promise import Promise
 
 from crawler import Serie
-from fuzzywuzzy import process
-from telegram.ext import Updater, CommandHandler, ConversationHandler, MessageHandler, Filters
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -20,9 +22,6 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 NAME, NAME_SELECT, SEASON, EPISODE, DOWNLOAD = range(5)
-
-from functools import wraps
-from telegram import ChatAction
 
 AWS_SERVER_PUBLIC_KEY = os.environ.get('AWS_SERVER_PUBLIC_KEY')
 AWS_SERVER_SECRET_KEY = os.environ.get('AWS_SERVER_SECRET_KEY')
@@ -98,12 +97,12 @@ def send_action(action):
     return decorator
 
 
-def start(bot, update):
+def start(bot, update, user_data):
     update.message.reply_text(
         'Hola! Yo buscaré subtítulos para ti.\n\n'
         'Envía /cancelar para terminar nuestra charla.\n\n'
         'Qué serie estás buscando?', reply_markup=ReplyKeyboardRemove())
-
+    save_data()
     return NAME
 
 
@@ -230,7 +229,7 @@ except:
     pass
 
 conv_handler = ConversationHandler(
-    entry_points=[CommandHandler('start', start)],
+    entry_points=[CommandHandler('start', start, pass_user_data=True)],
 
     states={
         NAME: [MessageHandler(Filters.text, name, pass_user_data=True)],
