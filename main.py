@@ -199,9 +199,6 @@ def episode(bot, update, user_data):
                     save_data()
                 except:
                     logging.error(sys.exc_info()[0])
-
-            update.message.reply_text('Eso fue todo.\n\nDesea buscar otro?',
-                                      reply_markup=telegram.ReplyKeyboardMarkup([['/start']]))
             user_data.clear()
             save_data()
             return RESTART
