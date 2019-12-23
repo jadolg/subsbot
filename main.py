@@ -25,6 +25,7 @@ NAME, NAME_SELECT, SEASON, EPISODE = range(4)
 
 AWS_SERVER_PUBLIC_KEY = os.environ.get('AWS_SERVER_PUBLIC_KEY')
 AWS_SERVER_SECRET_KEY = os.environ.get('AWS_SERVER_SECRET_KEY')
+AWS_REGION = os.environ.get('AWS_REGION')
 bucket_name = os.environ.get('S3_BUCKET_NAME')
 
 session = boto3.Session(
@@ -32,9 +33,7 @@ session = boto3.Session(
     aws_secret_access_key=AWS_SERVER_SECRET_KEY,
 )
 
-s3 = session.client('s3',
-                    endpoint_url=os.environ.get('S3_URL'),
-                    )
+s3 = session.client('s3', region_name=AWS_REGION)
 
 
 def save_data():
