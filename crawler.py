@@ -1,5 +1,8 @@
-import requests
 import re
+
+import cloudscraper
+
+scraper = cloudscraper.create_scraper()
 
 
 class Episode:
@@ -22,8 +25,9 @@ class Serie:
 
     @staticmethod
     def get_series_list():
+        scraper = cloudscraper.create_scraper()
         result = []
-        series_page = requests.get('https://www.tusubtitulo.com/series.php').text
+        series_page = scraper.get('https://www.tusubtitulo.com/series.php').text
         for serie in re.findall(
                 '<td class="line0"><img class="icon" src="images/icon-television.png" height="16" width="16"><a href="/show/(.*?)">(.*?)<',
                 series_page):
@@ -39,14 +43,15 @@ class Serie:
 
     def get_seasons(self):
         result = []
-        temporadas_page = requests.get(f'https://www.tusubtitulo.com/show/{self.id}').text
+        temporadas_page = scraper.get(f'https://www.tusubtitulo.com/show/{self.id}').text
         for temporada in re.findall('<a href="#" data-season="(.*?)">(.*?)</a>', temporadas_page):
             result.append(temporada[0])
         return result
 
     def get_episodes(self, season):
         result = []
-        episodes_page = requests.get(
+        scraper = cloudscraper.create_scraper()
+        episodes_page = scraper.get(
             f'https://www.tusubtitulo.com/ajax_loadShow.php?show={self.id}&season={season}').text
         for episodio_text in re.findall('<table width="80%" border="0" cellpadding="0" cellspacing="0">(.*?)</table>',
                                         episodes_page, re.DOTALL):
