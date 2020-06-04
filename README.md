@@ -1,4 +1,5 @@
 # subsbot
+[GONE] since https://www.tusubtitulo.com/ decided they don't want bots and added Cloudflare protection to their site I have decided to discontinue the project.
 Telegram bot to search and download subtitles from https://www.tusubtitulo.com/
 
 ## Disclaimer
